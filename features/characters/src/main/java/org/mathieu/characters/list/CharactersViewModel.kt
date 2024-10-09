@@ -12,7 +12,7 @@ sealed interface CharactersAction {
         CharactersAction
 }
 
-class CharactersViewModel(application: Application) : ViewModel<CharactersState>(
+class CharactersViewModel(application: Application) : org.mathieu.ui.ViewModel<CharactersState>(
     CharactersState(), application) {
 
     private val characterRepository: CharacterRepository by inject()

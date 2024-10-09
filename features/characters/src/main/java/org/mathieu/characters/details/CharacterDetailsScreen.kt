@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,9 +43,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import org.mathieu.ui.Destination
 import org.mathieu.ui.composables.PreviewContent
+import org.mathieu.ui.navigate
 
 private typealias UIState = CharacterDetailsState
+private typealias UIAction = CharacterAction
 
 @Composable
 fun CharacterDetailsScreen(
@@ -55,9 +62,18 @@ fun CharacterDetailsScreen(
 
     viewModel.init(characterId = id)
 
+    LaunchedEffect(viewModel) {
+        viewModel.events
+            .onEach { event ->
+                if (event is Destination.CharacterDetails)
+                    navController.navigate(destination = event)
+            }.collect()
+    }
+
     CharacterDetailsContent(
         state = state,
-        onClickBack = navController::popBackStack
+        onClickBack = navController::popBackStack,
+        onAction = viewModel::handleAction
     )
 
 }
@@ -67,7 +83,8 @@ fun CharacterDetailsScreen(
 @Composable
 private fun CharacterDetailsContent(
     state: UIState = UIState(),
-    onClickBack: () -> Unit = { }
+    onClickBack: () -> Unit = { },
+    onAction: (UIAction) -> Unit = { }
 ) = Scaffold(topBar = {
 
     Row(
@@ -155,11 +172,42 @@ private fun CharacterDetailsContent(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(text = state.name)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(text = "Location")
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    LocationItem(character = state, onAction)
                 }
 
 
             }
         }
+    }
+}
+
+@Composable
+fun LocationItem(character: CharacterDetailsState, onAction: (UIAction) -> Unit = { }) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE0E0E0))
+            .padding(16.dp)
+            .clickable {
+                onAction(CharacterAction.SelectedLocation(character.locationId))
+            },
+        verticalAlignment = Alignment.CenterVertically
+
+    ) {
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(text = "${character.locationName}", fontWeight = FontWeight.Bold)
+        }
+        Text(text = "${character.locationType}")
     }
 }
 
